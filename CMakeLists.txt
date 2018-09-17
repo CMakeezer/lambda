@@ -1,17 +1,44 @@
-
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(lambda)
 
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/demo EXCLUDE_FROM_ALL)
+set(CMAKE_CXX_STANDARD 14)
 
-set(GTEST_INCLUDE_DIRS  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/googletest/googletest/include
-                        ${CMAKE_CURRENT_SOURCE_DIR}/vendor/googletest/googlemock/include
-                        ${CMAKE_CURRENT_SOURCE_DIR}/vendor/benchmark/include)
+if(BUILD_TEST)
+    find_package(GTest REQUIRED)
+    find_package(GMock REQUIRED)
+endif()
+if(BUILD_BENCHMARK)
+    find_package(benchmark REQUIRED)
+endif()
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/googletest/googlemock EXCLUDE_FROM_ALL)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vendor/benchmark EXCLUDE_FROM_ALL)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/bench)
+add_library(lambda INTERFACE)
+
+target_include_directories(lambda
+  INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/lib>
+    $<INSTALL_INTERFACE:lib/>)
+
+if(BUILD_DEMO)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/demo)
+endif()
+if(BUILD_TEST)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
+endif()
+if(BUILD_BENCHMARK)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/bench)
+endif()
+
+# Create an install target
+install(TARGETS lambda
+        EXPORT lambda-config
+        INCLUDES DESTINATION include)
+
+install(EXPORT lambda-config
+        FILE lambda-config.cmake
+        NAMESPACE lambda::
+        DESTINATION share/lambda/cmake)
+
+install(DIRECTORY lib/lambda
+        DESTINATION include)
